@@ -5,8 +5,9 @@ import { ObjectId } from 'mongodb';
 
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user || session.user.role !== 'ADMIN') {
@@ -20,7 +21,7 @@ export async function PUT(
     const classesCollection = db.collection('classes');
 
     const result = await classesCollection.updateOne(
-      { _id: new ObjectId(params.id) },
+      { _id: new ObjectId(id) },
       {
         $set: {
           title: body.title,
@@ -38,7 +39,7 @@ export async function PUT(
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });
     }
 
-    const updatedClass = await classesCollection.findOne({ _id: new ObjectId(params.id) });
+    const updatedClass = await classesCollection.findOne({ _id: new ObjectId(id) });
 
     return NextResponse.json({
       ...updatedClass,
@@ -52,8 +53,9 @@ export async function PUT(
 
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
   const session = await auth();
 
   if (!session?.user || session.user.role !== 'ADMIN') {
@@ -64,7 +66,7 @@ export async function DELETE(
     const db = await getDb();
     const classesCollection = db.collection('classes');
 
-    const result = await classesCollection.deleteOne({ _id: new ObjectId(params.id) });
+    const result = await classesCollection.deleteOne({ _id: new ObjectId(id) });
 
     if (result.deletedCount === 0) {
       return NextResponse.json({ error: 'Class not found' }, { status: 404 });

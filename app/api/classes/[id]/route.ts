@@ -4,15 +4,17 @@ import { ObjectId } from 'mongodb';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await params;
+
   try {
     const db = await getDb();
     const classesCollection = db.collection('classes');
     const bookingsCollection = db.collection('bookings');
 
     const classDetails = await classesCollection.findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
     });
 
     if (!classDetails) {
@@ -20,7 +22,7 @@ export async function GET(
     }
 
     const bookingCount = await bookingsCollection.countDocuments({
-      classId: new ObjectId(params.id),
+      classId: new ObjectId(id),
     });
 
     return NextResponse.json({

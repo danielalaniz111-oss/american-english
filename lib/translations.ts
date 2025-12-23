@@ -24,8 +24,8 @@ export const translations = {
           description: 'Sistema de reserva simple e intuitivo'
         },
         payment: {
-          title: 'Pago Seguro',
-          description: 'Paga con MercadoPago de forma segura'
+          title: 'Formas de Pago',
+          description: 'MercadoPago y Stripe disponibles'
         },
         capacity: {
           title: 'Cupos Limitados',
