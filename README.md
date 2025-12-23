@@ -14,10 +14,10 @@ Sistema web para gestión de reservas de clases con pagos integrados mediante Me
 
 ## Tecnologías Utilizadas
 
-- **Next.js 14** - Framework de React con App Router
+- **Next.js 15** - Framework de React con App Router
 - **TypeScript** - Tipado estático
-- **Prisma** - ORM para base de datos
-- **PostgreSQL** - Base de datos
+- **MongoDB Native Driver** - Cliente de base de datos
+- **MongoDB** - Base de datos NoSQL
 - **NextAuth v5** - Autenticación
 - **MercadoPago SDK** - Procesamiento de pagos
 - **Tailwind CSS** - Estilos
@@ -26,8 +26,8 @@ Sistema web para gestión de reservas de clases con pagos integrados mediante Me
 
 ## Requisitos Previos
 
-- Node.js 18+ 
-- PostgreSQL
+- Node.js 18+
+- MongoDB (local o MongoDB Atlas)
 - Cuenta de Google Cloud (para OAuth)
 - Cuenta de MercadoPago (para pagos)
 
@@ -50,8 +50,11 @@ cp .env.example .env
 
 4. Configura las variables de entorno en `.env`:
 ```env
-# Base de datos PostgreSQL
-DATABASE_URL="postgresql://usuario:contraseña@localhost:5432/class_booking"
+# Base de datos MongoDB
+# Para MongoDB local:
+DATABASE_URL="mongodb://localhost:27017/class_booking"
+# Para MongoDB Atlas:
+# DATABASE_URL="mongodb+srv://username:password@cluster.mongodb.net/class_booking?retryWrites=true&w=majority"
 
 # NextAuth
 AUTH_SECRET="genera-un-secret-aleatorio"
@@ -65,22 +68,32 @@ GOOGLE_CLIENT_SECRET="tu-client-secret-de-google"
 MERCADOPAGO_ACCESS_TOKEN="tu-access-token-de-mercadopago"
 ```
 
-5. Ejecuta las migraciones de Prisma:
+5. (Opcional) Verifica la conexión a MongoDB:
 ```bash
-npx prisma migrate dev
+npm run dev
 ```
 
-6. Genera el cliente de Prisma:
-```bash
-npx prisma generate
-```
-
-7. (Opcional) Carga datos de prueba:
-```bash
-npx prisma db seed
-```
+**Nota**: La aplicación usa el driver nativo de MongoDB, no requiere migraciones ni generación de esquemas. Las colecciones se crean automáticamente cuando insertas datos.
 
 ## Configuración de Servicios Externos
+
+### MongoDB
+
+Tienes dos opciones para MongoDB:
+
+#### Opción 1: MongoDB Local
+1. Descarga e instala MongoDB Community Server desde [mongodb.com](https://www.mongodb.com/try/download/community)
+2. Inicia el servicio de MongoDB
+3. Usa la URL de conexión: `mongodb://localhost:27017/class_booking`
+
+#### Opción 2: MongoDB Atlas (Nube - Recomendado)
+1. Crea una cuenta gratuita en [MongoDB Atlas](https://www.mongodb.com/cloud/atlas/register)
+2. Crea un nuevo cluster (el tier gratuito es suficiente)
+3. Crea un usuario de base de datos en "Database Access"
+4. Añade tu IP a la lista blanca en "Network Access" (o permite acceso desde cualquier IP: 0.0.0.0/0)
+5. Haz clic en "Connect" en tu cluster y selecciona "Connect your application"
+6. Copia la cadena de conexión y reemplaza `<password>` con tu contraseña
+7. Usa esta URL en tu `.env`: `mongodb+srv://username:password@cluster.mongodb.net/class_booking?retryWrites=true&w=majority`
 
 ### Google OAuth
 
@@ -128,10 +141,11 @@ class-booking/
 │   └── layout.tsx         # Layout principal
 ├── components/            # Componentes React
 ├── lib/                   # Utilidades y configuraciones
-│   ├── db.ts             # Cliente Prisma
+│   ├── db.ts             # Cliente MongoDB
+│   ├── mongodb-adapter.ts # Adaptador NextAuth para MongoDB
+│   ├── types.ts          # Interfaces TypeScript para modelos
 │   ├── mercadopago.ts    # Configuración MercadoPago
 │   └── translations.ts   # Traducciones en español
-├── prisma/               # Esquema y migraciones
 └── types/                # Definiciones de TypeScript
 ```
 
@@ -153,11 +167,10 @@ class-booking/
 ## Scripts Disponibles
 
 ```bash
-npm run dev        # Inicia servidor de desarrollo
-npm run build      # Compila para producción
-npm start          # Inicia servidor de producción
-npm run lint       # Ejecuta el linter
-npx prisma studio  # Abre Prisma Studio para ver la BD
+npm run dev    # Inicia servidor de desarrollo
+npm run build  # Compila para producción
+npm start      # Inicia servidor de producción
+npm run lint   # Ejecuta el linter
 ```
 
 ## Consideraciones de Seguridad

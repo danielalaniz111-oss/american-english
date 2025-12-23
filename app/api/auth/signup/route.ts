@@ -1,15 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { PrismaClient } from '@prisma/client'
 import bcrypt from 'bcryptjs'
-
-const prisma = new PrismaClient()
+import { getDb } from '@/lib/db'
+import { Role } from '@/lib/types'
 
 export async function POST(request: NextRequest) {
   try {
     console.log('Signup API called')
     const body = await request.json()
     console.log('Request body:', body)
-    
+
     const { email, password, name } = body
 
     if (!email || !password || !name) {
@@ -29,9 +28,10 @@ export async function POST(request: NextRequest) {
     }
 
     console.log('Checking for existing user...')
-    const existingUser = await prisma.user.findUnique({
-      where: { email }
-    })
+    const db = await getDb()
+    const usersCollection = db.collection('users')
+
+    const existingUser = await usersCollection.findOne({ email })
 
     if (existingUser) {
       console.log('User already exists:', email)
@@ -45,23 +45,25 @@ export async function POST(request: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 12)
 
     console.log('Creating user...')
-    const user = await prisma.user.create({
-      data: {
-        email,
-        password: hashedPassword,
-        name,
-      }
+    const now = new Date()
+    const result = await usersCollection.insertOne({
+      email,
+      password: hashedPassword,
+      name,
+      role: Role.USER,
+      createdAt: now,
+      updatedAt: now,
     })
 
-    console.log('User created successfully:', user.id)
+    console.log('User created successfully:', result.insertedId)
     return NextResponse.json(
-      { message: 'Usuario creado exitosamente', userId: user.id },
+      { message: 'Usuario creado exitosamente', userId: result.insertedId },
       { status: 201 }
     )
   } catch (error) {
     console.error('Signup error:', error)
     return NextResponse.json(
-      { message: 'Error interno del servidor', error: error.message },
+      { message: 'Error interno del servidor', error: (error as Error).message },
       { status: 500 }
     )
   }

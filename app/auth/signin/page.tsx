@@ -3,6 +3,7 @@
 import { signIn } from 'next-auth/react'
 import { useState } from 'react'
 import Link from 'next/link'
+import toast from 'react-hot-toast'
 
 export default function SignInPage() {
   const [email, setEmail] = useState('')
@@ -14,27 +15,26 @@ export default function SignInPage() {
     e.preventDefault()
     setIsLoading(true)
     setError('')
-    
+
     try {
-      console.log('Attempting sign in with:', { email })
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
         callbackUrl: '/'
       })
-      
-      console.log('Sign in result:', result)
-      
+
       if (result?.error) {
-        console.error('Sign in error:', result.error)
+        toast.error('Credenciales inválidas. Verifica tu correo y contraseña.')
         setError('Credenciales inválidas. Verifica tu correo y contraseña.')
       } else if (result?.ok) {
-        console.log('Sign in successful, redirecting...')
-        window.location.href = result.url || '/'
+        toast.success('¡Sesión iniciada exitosamente!')
+        setTimeout(() => {
+          window.location.href = result.url || '/'
+        }, 1000)
       }
     } catch (error) {
-      console.error('Sign in error:', error)
+      toast.error('Error al iniciar sesión. Inténtalo de nuevo.')
       setError('Error al iniciar sesión. Inténtalo de nuevo.')
     } finally {
       setIsLoading(false)
