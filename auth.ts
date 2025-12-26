@@ -1,14 +1,13 @@
 import NextAuth from "next-auth"
 import Google from "next-auth/providers/google"
 import Credentials from "next-auth/providers/credentials"
-import { PrismaAdapter } from "@auth/prisma-adapter"
-import { PrismaClient } from "@prisma/client"
 import bcrypt from "bcryptjs"
-
-const prisma = new PrismaClient()
+import { MongoDBAdapter } from "@/lib/mongodb-adapter"
+import { getDb } from "@/lib/db"
+import { ObjectId } from "mongodb"
 
 export const { handlers, signIn, signOut, auth } = NextAuth({
-  adapter: PrismaAdapter(prisma),
+  adapter: MongoDBAdapter(),
   providers: [
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
@@ -25,10 +24,9 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           return null
         }
 
-        const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email as string
-          }
+        const db = await getDb()
+        const user = await db.collection("users").findOne({
+          email: credentials.email as string
         })
 
         if (!user || !user.password) {
@@ -45,7 +43,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         }
 
         return {
-          id: user.id,
+          id: user._id.toString(),
           email: user.email,
           name: user.name,
           role: user.role,
@@ -57,10 +55,11 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     session: async ({ session, token }) => {
       if (session?.user && token?.sub) {
         session.user.id = token.sub
-        const dbUser = await prisma.user.findUnique({
-          where: { id: token.sub },
-          select: { role: true }
-        })
+        const db = await getDb()
+        const dbUser = await db.collection("users").findOne(
+          { _id: new ObjectId(token.sub) },
+          { projection: { role: 1 } }
+        )
         if (dbUser) {
           session.user.role = dbUser.role
         }

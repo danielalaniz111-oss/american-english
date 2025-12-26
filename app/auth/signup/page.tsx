@@ -3,6 +3,7 @@
 import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import toast from 'react-hot-toast'
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('')
@@ -18,22 +19,19 @@ export default function SignUpPage() {
     setIsLoading(true)
     setError('')
 
-    console.log('Form submitted with:', { email, name, passwordLength: password.length })
-
     if (password !== confirmPassword) {
-      setError('Las contraseñas no coinciden')
+      toast.error('Las contraseñas no coinciden')
       setIsLoading(false)
       return
     }
 
     if (password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres')
+      toast.error('La contraseña debe tener al menos 6 caracteres')
       setIsLoading(false)
       return
     }
     
     try {
-      console.log('Sending signup request...')
       const res = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
@@ -46,18 +44,18 @@ export default function SignUpPage() {
         }),
       })
 
-      console.log('Response status:', res.status)
-      
       if (res.ok) {
-        console.log('Signup successful, redirecting...')
-        router.push('/auth/signin?message=Cuenta creada exitosamente')
+        toast.success('¡Cuenta creada exitosamente! Redirigiendo...')
+        setTimeout(() => {
+          router.push('/auth/signin')
+        }, 1500)
       } else {
         const data = await res.json()
-        console.log('Signup error response:', data)
+        toast.error(data.message || 'Error al crear la cuenta')
         setError(data.message || 'Error al crear la cuenta')
       }
     } catch (error) {
-      console.error('Signup request failed:', error)
+      toast.error('Error al crear la cuenta. Por favor, intenta de nuevo.')
       setError('Error al crear la cuenta')
     } finally {
       setIsLoading(false)
