@@ -18,19 +18,6 @@ const services = [
   },
   {
     id: 2,
-    name: 'Clases Semanales',
-    duration: '1 hora por semana',
-    description: 'Mantén tu aprendizaje constante con una clase semanal. Perfecto para quienes quieren mejorar gradualmente sin comprometer demasiado tiempo.',
-    features: [
-      'Una clase por semana',
-      'Continuidad en el aprendizaje',
-      'Práctica regular',
-      'Progreso sostenido'
-    ],
-    icon: CalendarDays,
-  },
-  {
-    id: 3,
     name: 'Clases Mensuales',
     duration: '1 hora por semana (4 clases/mes)',
     description: 'El plan más completo para un aprendizaje intensivo. Incluye 4 clases mensuales con seguimiento continuo y material de estudio.',
