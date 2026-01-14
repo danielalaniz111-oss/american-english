@@ -22,6 +22,7 @@ export function MongoDBAdapter(): Adapter {
         emailVerified: createdUser.emailVerified || null,
         name: createdUser.name || null,
         image: createdUser.image || null,
+        role: createdUser.role || 'USER',
       }
     },
 
@@ -35,6 +36,7 @@ export function MongoDBAdapter(): Adapter {
         emailVerified: user.emailVerified || null,
         name: user.name || null,
         image: user.image || null,
+        role: user.role || 'USER',
       }
     },
 
@@ -48,6 +50,7 @@ export function MongoDBAdapter(): Adapter {
         emailVerified: user.emailVerified || null,
         name: user.name || null,
         image: user.image || null,
+        role: user.role || 'USER',
       }
     },
 
@@ -66,6 +69,7 @@ export function MongoDBAdapter(): Adapter {
         emailVerified: user.emailVerified || null,
         name: user.name || null,
         image: user.image || null,
+        role: user.role || 'USER',
       }
     },
 
@@ -84,6 +88,7 @@ export function MongoDBAdapter(): Adapter {
         emailVerified: updated.emailVerified || null,
         name: updated.name || null,
         image: updated.image || null,
+        role: updated.role || 'USER',
       }
     },
 
@@ -139,6 +144,7 @@ export function MongoDBAdapter(): Adapter {
           emailVerified: user.emailVerified || null,
           name: user.name || null,
           image: user.image || null,
+          role: user.role || 'USER',
         },
       }
     },

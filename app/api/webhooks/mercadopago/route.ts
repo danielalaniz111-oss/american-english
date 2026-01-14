@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getPayment } from '@/lib/mercadopago';
 import { getDb } from '@/lib/db';
+import { sendBookingConfirmationEmail } from '@/lib/email';
 
 export async function POST(request: NextRequest) {
   try {
@@ -32,12 +33,38 @@ export async function POST(request: NextRequest) {
             externalReference: externalReference,
           });
 
-          if (!existingBooking) {
+          if (existingBooking) {
+            // Update existing booking to confirmed
+            await bookingsCollection.updateOne(
+              { externalReference: externalReference },
+              {
+                $set: {
+                  status: 'confirmed',
+                  paymentStatus: 'approved',
+                  paymentId: paymentId,
+                  updatedAt: new Date(),
+                },
+              }
+            );
+
+            console.log('Booking confirmed for:', externalReference);
+
+            // Send confirmation emails
+            await sendBookingConfirmationEmail({
+              buyerName: existingBooking.buyerName || metadata.buyer_name,
+              buyerEmail: existingBooking.buyerEmail || metadata.buyer_email,
+              serviceType: existingBooking.serviceType || metadata.service_type,
+              selectedDate: existingBooking.selectedDate || metadata.selected_date,
+              selectedTime: existingBooking.selectedTime || metadata.selected_time,
+              amount: payment.transaction_amount || existingBooking.amount,
+            });
+          } else {
+            // Create new booking (fallback if pending booking wasn't created)
             await bookingsCollection.insertOne({
               externalReference: externalReference,
               paymentId: paymentId,
               status: 'confirmed',
-              paymentStatus: status,
+              paymentStatus: 'approved',
               serviceType: metadata.service_type,
               selectedDate: metadata.selected_date,
               selectedTime: metadata.selected_time,
@@ -50,19 +77,16 @@ export async function POST(request: NextRequest) {
             });
 
             console.log('Booking created for:', externalReference);
-          } else {
-            // Update existing booking
-            await bookingsCollection.updateOne(
-              { externalReference: externalReference },
-              {
-                $set: {
-                  paymentStatus: status,
-                  updatedAt: new Date(),
-                },
-              }
-            );
 
-            console.log('Booking updated for:', externalReference);
+            // Send confirmation emails
+            await sendBookingConfirmationEmail({
+              buyerName: metadata.buyer_name,
+              buyerEmail: metadata.buyer_email,
+              serviceType: metadata.service_type,
+              selectedDate: metadata.selected_date,
+              selectedTime: metadata.selected_time,
+              amount: payment.transaction_amount || 0,
+            });
           }
         }
       }

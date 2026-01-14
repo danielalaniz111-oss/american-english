@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Calendar from 'react-calendar';
 import { format } from 'date-fns';
 import { es } from 'date-fns/locale';
@@ -63,12 +63,32 @@ export default function ClassesPage() {
   const [formErrors, setFormErrors] = useState<Partial<BookingForm>>({});
   const [paymentErrors, setPaymentErrors] = useState<Partial<PaymentForm>>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [bookedTimes, setBookedTimes] = useState<string[]>([]);
+  const [loadingTimes, setLoadingTimes] = useState(false);
   const { data: session } = useSession();
+
+  // Fetch booked times when date is selected
+  const fetchBookedTimes = async (date: Date) => {
+    setLoadingTimes(true);
+    try {
+      const dateStr = format(date, 'yyyy-MM-dd');
+      const response = await fetch(`/api/bookings/times?date=${dateStr}`);
+      const data = await response.json();
+      setBookedTimes(data.bookedTimes || []);
+    } catch (error) {
+      console.error('Error fetching booked times:', error);
+      setBookedTimes([]);
+    } finally {
+      setLoadingTimes(false);
+    }
+  };
 
   const handleDateChange = (value: Date) => {
     setSelectedDate(value);
     setShowForm(true);
     setCurrentStep(1);
+    setBookedTimes([]);
+    fetchBookedTimes(value);
     // Pre-fill data if user is logged in
     if (session?.user?.email) {
       setFormData(prev => ({ ...prev, email: session.user?.email || '' }));
@@ -518,6 +538,7 @@ export default function ClassesPage() {
                     <label className="block text-sm font-medium text-gray-700 mb-2">
                       <Clock className="inline h-4 w-4 mr-1" />
                       Horario *
+                      {loadingTimes && <span className="ml-2 text-pink-500 text-sm">(cargando...)</span>}
                     </label>
                     <select
                       value={formData.selectedTime}
@@ -527,16 +548,25 @@ export default function ClassesPage() {
                       className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 focus:border-transparent text-lg ${
                         formErrors.selectedTime ? 'border-red-500' : 'border-gray-300'
                       }`}
+                      disabled={loadingTimes}
                     >
                       <option value="">Selecciona un horario</option>
-                      {timeSlots.map((time) => (
-                        <option key={time} value={time}>
-                          {time} hs
-                        </option>
-                      ))}
+                      {timeSlots.map((time) => {
+                        const isBooked = bookedTimes.includes(time);
+                        return (
+                          <option key={time} value={time} disabled={isBooked}>
+                            {time} hs {isBooked ? '(No disponible)' : ''}
+                          </option>
+                        );
+                      })}
                     </select>
                     {formErrors.selectedTime && (
                       <p className="text-red-500 text-sm mt-1">{formErrors.selectedTime}</p>
+                    )}
+                    {bookedTimes.length > 0 && (
+                      <p className="text-gray-500 text-sm mt-1">
+                        Los horarios marcados como &quot;No disponible&quot; ya están reservados.
+                      </p>
                     )}
                   </div>
                 </div>

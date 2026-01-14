@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { getDb } from '@/lib/db';
-import { createPreference } from '@/lib/mercadopago';
+import { createPreference, BookingData } from '@/lib/mercadopago';
 import { ObjectId } from 'mongodb';
 import { BookingStatus, PaymentStatus } from '@/lib/types';
 
@@ -57,12 +57,21 @@ export async function POST(request: NextRequest) {
 
     const bookingId = result.insertedId.toString();
 
-    const preference = await createPreference(
-      classDetails.title,
-      classDetails.price,
-      1,
-      bookingId
-    );
+    const bookingData: BookingData = {
+      title: classDetails.title,
+      description: `Reserva de clase: ${classDetails.title}`,
+      price: classDetails.price,
+      quantity: 1,
+      buyerEmail: session.user.email || '',
+      buyerName: session.user.name?.split(' ')[0] || '',
+      buyerLastName: session.user.name?.split(' ').slice(1).join(' ') || '',
+      bookingId: bookingId,
+      serviceType: 'class',
+      selectedDate: classDetails.date || new Date().toISOString().split('T')[0],
+      selectedTime: classDetails.time || '00:00',
+    };
+
+    const preference = await createPreference(bookingData);
 
     return NextResponse.json({
       bookingId,
