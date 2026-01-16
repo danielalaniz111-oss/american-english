@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createPreference, BookingData } from '@/lib/mercadopago';
+import { getDb } from '@/lib/db';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: NextRequest) {
@@ -25,6 +26,23 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if time slot is already booked
+    const db = await getDb();
+    const bookingsCollection = db.collection('bookings');
+
+    const existingBooking = await bookingsCollection.findOne({
+      selectedDate: selectedDate,
+      selectedTime: selectedTime,
+      status: { $in: ['pending', 'confirmed'] }
+    });
+
+    if (existingBooking) {
+      return NextResponse.json(
+        { error: 'Este horario ya está reservado. Por favor elegí otro.' },
+        { status: 400 }
+      );
+    }
+
     // Generate unique booking ID
     const bookingId = uuidv4();
 
@@ -44,6 +62,25 @@ export async function POST(request: NextRequest) {
     };
 
     const preference = await createPreference(bookingData);
+
+    // Save pending booking to database
+    await bookingsCollection.insertOne({
+      externalReference: bookingId,
+      status: 'pending',
+      paymentStatus: 'pending',
+      serviceType: serviceType,
+      selectedDate: selectedDate,
+      selectedTime: selectedTime,
+      buyerName: `${firstName} ${lastName}`,
+      buyerFirstName: firstName,
+      buyerLastName: lastName,
+      buyerEmail: email,
+      amount: price,
+      paymentMethod: 'mercadopago',
+      preferenceId: preference.id,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
 
     return NextResponse.json({
       success: true,

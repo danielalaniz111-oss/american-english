@@ -66,11 +66,22 @@ export interface Class {
 
 export interface Booking {
   _id: ObjectId
-  userId: ObjectId
-  classId: ObjectId
+  userId?: ObjectId
+  classId?: ObjectId
   status: BookingStatus
   paymentId?: string
   paymentStatus: PaymentStatus
+  // New fields for class bookings
+  externalReference?: string
+  serviceType?: string
+  selectedDate?: string
+  selectedTime?: string
+  buyerName?: string
+  buyerEmail?: string
+  buyerFirstName?: string
+  buyerLastName?: string
+  amount?: number
+  paymentMethod?: string
   createdAt: Date
   updatedAt: Date
 }

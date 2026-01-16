@@ -13,8 +13,12 @@ const client = new MercadoPagoConfig({
 
 console.log(`MercadoPago: Using ${useTestAccount ? 'TEST ACCOUNT' : 'PRODUCTION'} credentials`);
 
-// Use APP_URL for server-side, fallback to localhost
+// Use VERCEL_URL (auto-provided by Vercel), APP_URL, or fallback to localhost
 const getBaseUrl = () => {
+  // VERCEL_URL is automatically set by Vercel for all deployments (including preview branches)
+  if (process.env.VERCEL_URL) {
+    return `https://${process.env.VERCEL_URL}`;
+  }
   return process.env.APP_URL || process.env.NEXT_PUBLIC_URL || 'http://localhost:3000';
 };
 
